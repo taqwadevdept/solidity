@@ -767,8 +767,9 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		}
 		break;
 	}
-	case FunctionType::Kind::MetaType:
+	case FunctionType::Kind::GasLeft:
 	{
+		define(_functionCall) << "gas()\n";
 		break;
 	}
 	default:
