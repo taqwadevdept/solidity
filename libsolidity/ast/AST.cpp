@@ -335,9 +335,20 @@ TypePointer FunctionDefinition::type() const
 
 TypePointer FunctionDefinition::typeViaContractName() const
 {
-	if (annotation().contract->isLibrary())
+	if (annotation().contract && annotation().contract->isLibrary())
 		return FunctionType(*this).asCallableFunction(true);
 	return TypeProvider::function(*this, FunctionType::Kind::Declaration);
+}
+
+bool FunctionDefinition::isFree() const
+{
+	if (dynamic_cast<SourceUnit const*>(scope()))
+		return true;
+	else if (dynamic_cast<ContractDefinition const*>(scope()))
+		return false;
+	else
+		solAssert(false, "");
+	return true;
 }
 
 string FunctionDefinition::externalSignature() const
