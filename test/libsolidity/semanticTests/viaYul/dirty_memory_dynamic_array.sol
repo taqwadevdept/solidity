@@ -1,6 +1,6 @@
 contract C {
     function f() public pure returns (bool correct) {
-        uint8[1] memory m;
+        uint8[] memory m = new uint8[](1);
         m[0] = uint8(0x0101);
         assembly {
             mstore(m, 257)
