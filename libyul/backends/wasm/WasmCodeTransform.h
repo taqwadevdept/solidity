@@ -25,6 +25,8 @@
 #include <libyul/Dialect.h>
 #include <libyul/optimiser/NameDispenser.h>
 
+#include <libsolutil/Common.h>
+
 #include <stack>
 #include <map>
 
@@ -82,6 +84,8 @@ private:
 	std::string newLabel();
 	/// Makes sure that there are at least @a _amount global variables.
 	void allocateGlobals(size_t _amount);
+
+	wasm::Literal makeLiteral(wasm::Type _type, u256 _value);
 
 	Dialect const& m_dialect;
 	NameDispenser m_nameDispenser;
