@@ -9,6 +9,7 @@ Compiler Features:
  * SMTChecker: Support array ``length``.
  * SMTChecker: Support array ``push`` and ``pop``.
  * Add support for natspec comments on state variables.
+ * Yul: Raise warning for switch statements that only have a default and no other cases.
 
 Bugfixes:
  * Optimizer: Fixed a bug in BlockDeDuplicator.
