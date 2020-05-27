@@ -4,4 +4,4 @@
 // ====
 // dialect: evmTyped
 // ----
-// Warning: (10-12): The "pc" instruction is deprecated and will be removed in the next breaking release.
+// TypeError: (10-12): The "pc" instruction is not available in Yul for any VMs (you are currently compiling for "istanbul").

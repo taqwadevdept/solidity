@@ -531,7 +531,7 @@ bool AsmAnalyzer::warnOnInstructions(evmasm::Instruction _instr, SourceLocation 
 			+ "\" instruction is " +
 			vmKindMessage +
 			" VMs " +
-			" (you are currently compiling for \"" +
+			"(you are currently compiling for \"" +
 			m_evmVersion.name() +
 			"\")."
 		);
@@ -557,13 +557,7 @@ bool AsmAnalyzer::warnOnInstructions(evmasm::Instruction _instr, SourceLocation 
 	else if (_instr == evmasm::Instruction::CHAINID && !m_evmVersion.hasChainID())
 		errorForVM("only available for Istanbul-compatible");
 	else if (_instr == evmasm::Instruction::PC)
-		m_errorReporter.warning(
-			2450_error,
-			_location,
-			"The \"" +
-			boost::to_lower_copy(instructionInfo(_instr).name) +
-			"\" instruction is deprecated and will be removed in the next breaking release."
-		);
+		errorForVM("not available in Yul for any");
 	else if (_instr == evmasm::Instruction::SELFBALANCE && !m_evmVersion.hasSelfBalance())
 		errorForVM("only available for Istanbul-compatible");
 	else if (

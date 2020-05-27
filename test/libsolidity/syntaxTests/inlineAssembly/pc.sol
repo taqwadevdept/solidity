@@ -6,4 +6,4 @@ contract C {
 	}
 }
 // ----
-// Warning: (61-63): The "pc" instruction is deprecated and will be removed in the next breaking release.
+// TypeError: (61-63): The "pc" instruction is not available in Yul for any VMs (you are currently compiling for "istanbul").
