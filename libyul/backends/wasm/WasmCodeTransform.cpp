@@ -88,7 +88,7 @@ wasm::Expression WasmCodeTransform::operator()(VariableDeclaration const& _varDe
 	for (auto const& var: _varDecl.variables)
 	{
 		variableNames.emplace_back(var.name.str());
-		m_localVariables.emplace_back(wasm::VariableDeclaration{variableNames.back()});
+		m_localVariables.emplace_back(wasm::VariableDeclaration{variableNames.back(), "i64"});
 	}
 
 	if (_varDecl.value)
@@ -187,7 +187,7 @@ wasm::Expression WasmCodeTransform::operator()(Switch const& _switch)
 {
 	wasm::Block block;
 	string condition = m_nameDispenser.newName("condition"_yulstring).str();
-	m_localVariables.emplace_back(wasm::VariableDeclaration{condition});
+	m_localVariables.emplace_back(wasm::VariableDeclaration{condition, "i64"});
 	block.statements.emplace_back(wasm::LocalAssignment{condition, visit(*_switch.expression)});
 
 	vector<wasm::Expression>* currentBlock = &block.statements;
@@ -307,9 +307,9 @@ wasm::FunctionDefinition WasmCodeTransform::translateFunction(yul::FunctionDefin
 	wasm::FunctionDefinition fun;
 	fun.name = _fun.name.str();
 	for (auto const& param: _fun.parameters)
-		fun.parameterNames.emplace_back(param.name.str());
+		fun.parameters.push_back({param.name.str(), "i64"});
 	for (auto const& retParam: _fun.returnVariables)
-		fun.locals.emplace_back(wasm::VariableDeclaration{retParam.name.str()});
+		fun.locals.emplace_back(wasm::VariableDeclaration{retParam.name.str(), "i64"});
 	fun.returns = !_fun.returnVariables.empty();
 
 	yulAssert(m_localVariables.empty(), "");
@@ -348,7 +348,8 @@ void WasmCodeTransform::allocateGlobals(size_t _amount)
 {
 	while (m_globalVariables.size() < _amount)
 		m_globalVariables.emplace_back(wasm::GlobalVariableDeclaration{
-			m_nameDispenser.newName("global_"_yulstring).str()
+			m_nameDispenser.newName("global_"_yulstring).str(),
+			"i64"
 		});
 }
 

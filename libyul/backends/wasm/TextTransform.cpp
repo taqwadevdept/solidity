@@ -168,8 +168,8 @@ string TextTransform::indented(string const& _in)
 string TextTransform::transform(wasm::FunctionDefinition const& _function)
 {
 	string ret = "(func $" + _function.name + "\n";
-	for (auto const& param: _function.parameterNames)
-		ret += "    (param $" + param + " i64)\n";
+	for (auto const& param: _function.parameters)
+		ret += "    (param $" + param.name + " i64)\n";
 	if (_function.returns)
 		ret += "    (result i64)\n";
 	for (auto const& local: _function.locals)

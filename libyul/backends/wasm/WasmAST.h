@@ -30,6 +30,11 @@
 namespace solidity::yul::wasm
 {
 
+using Type = std::string;
+
+struct TypedName { std::string name; Type type; };
+using TypedNameList = std::vector<TypedName>;
+
 struct Literal;
 struct StringLiteral;
 struct LocalVariable;
@@ -70,8 +75,8 @@ struct Branch { Label label; };
 struct Return {};
 struct BranchIf { Label label; std::unique_ptr<Expression> condition; };
 
-struct VariableDeclaration { std::string variableName; };
-struct GlobalVariableDeclaration { std::string variableName; };
+struct VariableDeclaration { std::string variableName; Type type; };
+struct GlobalVariableDeclaration { std::string variableName; Type type; };
 struct FunctionImport {
 	std::string module;
 	std::string externalName;
@@ -83,7 +88,7 @@ struct FunctionImport {
 struct FunctionDefinition
 {
 	std::string name;
-	std::vector<std::string> parameterNames;
+	std::vector<TypedName> parameters;
 	bool returns;
 	std::vector<VariableDeclaration> locals;
 	std::vector<Expression> body;

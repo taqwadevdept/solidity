@@ -441,8 +441,8 @@ bytes BinaryTransform::operator()(FunctionDefinition const& _function)
 
 	m_locals.clear();
 	size_t varIdx = 0;
-	for (size_t i = 0; i < _function.parameterNames.size(); ++i)
-		m_locals[_function.parameterNames[i]] = varIdx++;
+	for (size_t i = 0; i < _function.parameters.size(); ++i)
+		m_locals[_function.parameters[i].name] = varIdx++;
 	for (size_t i = 0; i < _function.locals.size(); ++i)
 		m_locals[_function.locals[i].variableName] = varIdx++;
 
@@ -468,7 +468,7 @@ BinaryTransform::Type BinaryTransform::typeOf(FunctionDefinition const& _funDef)
 {
 
 	return {
-		encodeTypes(vector<string>(_funDef.parameterNames.size(), "i64")),
+		encodeTypes(vector<string>(_funDef.parameters.size(), "i64")),
 		encodeTypes(vector<string>(_funDef.returns ? 1 : 0, "i64"))
 	};
 }
