@@ -40,7 +40,8 @@ wasm::Module WasmCodeTransform::run(Dialect const& _dialect, yul::Block const& _
 {
 	wasm::Module module;
 
-	WasmCodeTransform transform(_dialect, _ast);
+	TypeInfo typeInfo(_dialect, _ast);
+	WasmCodeTransform transform(_dialect, _ast, typeInfo);
 
 	for (auto const& statement: _ast.statements)
 	{
@@ -70,14 +71,18 @@ wasm::Expression WasmCodeTransform::generateMultiAssignment(
 	if (_variableNames.size() == 1)
 		return { std::move(assignment) };
 
-	allocateGlobals(_variableNames.size() - 1);
+	vector<wasm::Type> requestedTypes;
+	for (size_t i = 1; i < _variableNames.size(); ++i)
+		requestedTypes.push_back(m_typeInfo.typeOfVariable(YulString(_variableNames[i])).str());
+	vector<size_t> allocatedIndices = allocateGlobals(requestedTypes);
+	yulAssert(allocatedIndices.size() == _variableNames.size() - 1, "");
 
 	wasm::Block block;
 	block.statements.emplace_back(move(assignment));
 	for (size_t i = 1; i < _variableNames.size(); ++i)
 		block.statements.emplace_back(wasm::LocalAssignment{
 			move(_variableNames.at(i)),
-			make_unique<wasm::Expression>(wasm::GlobalVariable{m_globalVariables.at(i - 1).variableName})
+			make_unique<wasm::Expression>(wasm::GlobalVariable{m_globalVariables.at(allocatedIndices[i - 1]).variableName})
 		});
 	return { std::move(block) };
 }
@@ -88,7 +93,8 @@ wasm::Expression WasmCodeTransform::operator()(VariableDeclaration const& _varDe
 	for (auto const& var: _varDecl.variables)
 	{
 		variableNames.emplace_back(var.name.str());
-		m_localVariables.emplace_back(wasm::VariableDeclaration{variableNames.back(), "i64"});
+		yulAssert(m_dialect.types.count(var.type) == 1, "");
+		m_localVariables.emplace_back(wasm::VariableDeclaration{variableNames.back(), var.type.str()});
 	}
 
 	if (_varDecl.value)
@@ -171,13 +177,14 @@ wasm::Expression WasmCodeTransform::operator()(Literal const& _literal)
 
 wasm::Expression WasmCodeTransform::operator()(If const& _if)
 {
-	// TODO converting i64 to i32 might not always be needed.
+	yul::Type conditionType = m_typeInfo.typeOf(*_if.condition);
+	yulAssert(m_dialect.types.count(conditionType) == 1, "");
 
 	vector<wasm::Expression> args;
 	args.emplace_back(visitReturnByValue(*_if.condition));
-	args.emplace_back(wasm::Literal{makeLiteral("i64", 0)});
+	args.emplace_back(wasm::Literal{makeLiteral(conditionType.str(), 0)});
 	return wasm::If{
-		make_unique<wasm::Expression>(wasm::BuiltinCall{"i64.ne", std::move(args)}),
+		make_unique<wasm::Expression>(wasm::BuiltinCall{conditionType.str() + ".ne", std::move(args)}),
 		visit(_if.body.statements),
 		{}
 	};
@@ -185,9 +192,12 @@ wasm::Expression WasmCodeTransform::operator()(If const& _if)
 
 wasm::Expression WasmCodeTransform::operator()(Switch const& _switch)
 {
+	yul::Type expressionType = m_typeInfo.typeOf(*_switch.expression);
+	yulAssert(m_dialect.types.count(expressionType) == 1, "");
+
 	wasm::Block block;
 	string condition = m_nameDispenser.newName("condition"_yulstring).str();
-	m_localVariables.emplace_back(wasm::VariableDeclaration{condition, "i64"});
+	m_localVariables.emplace_back(wasm::VariableDeclaration{condition, expressionType.str()});
 	block.statements.emplace_back(wasm::LocalAssignment{condition, visit(*_switch.expression)});
 
 	vector<wasm::Expression>* currentBlock = &block.statements;
@@ -196,7 +206,7 @@ wasm::Expression WasmCodeTransform::operator()(Switch const& _switch)
 		Case const& c = _switch.cases.at(i);
 		if (c.value)
 		{
-			wasm::BuiltinCall comparison{"i64.eq", make_vector<wasm::Expression>(
+			wasm::BuiltinCall comparison{expressionType.str() + ".eq", make_vector<wasm::Expression>(
 				wasm::LocalVariable{condition},
 				visitReturnByValue(*c.value)
 			)};
@@ -235,11 +245,14 @@ wasm::Expression WasmCodeTransform::operator()(ForLoop const& _for)
 	string continueLabel = newLabel();
 	m_breakContinueLabelNames.push({breakLabel, continueLabel});
 
+	yul::Type conditionType = m_typeInfo.typeOf(*_for.condition);
+	yulAssert(m_dialect.types.count(conditionType) == 1, "");
+
 	wasm::Loop loop;
 	loop.labelName = newLabel();
 	loop.statements = visit(_for.pre.statements);
 	loop.statements.emplace_back(wasm::BranchIf{wasm::Label{breakLabel}, make_unique<wasm::Expression>(
-		wasm::BuiltinCall{"i64.eqz", make_vector<wasm::Expression>(
+		wasm::BuiltinCall{conditionType.str() + ".eqz", make_vector<wasm::Expression>(
 			visitReturnByValue(*_for.condition)
 		)}
 	)});
@@ -307,9 +320,15 @@ wasm::FunctionDefinition WasmCodeTransform::translateFunction(yul::FunctionDefin
 	wasm::FunctionDefinition fun;
 	fun.name = _fun.name.str();
 	for (auto const& param: _fun.parameters)
-		fun.parameters.push_back({param.name.str(), "i64"});
+	{
+		yulAssert(m_dialect.types.count(param.type) == 1, "");
+		fun.parameters.push_back({param.name.str(), param.type.str()});
+	}
 	for (auto const& retParam: _fun.returnVariables)
-		fun.locals.emplace_back(wasm::VariableDeclaration{retParam.name.str(), "i64"});
+	{
+		yulAssert(m_dialect.types.count(retParam.type) == 1, "");
+		fun.locals.emplace_back(wasm::VariableDeclaration{retParam.name.str(), retParam.type.str()});
+	}
 	fun.returns = !_fun.returnVariables.empty();
 
 	yulAssert(m_localVariables.empty(), "");
@@ -324,14 +343,18 @@ wasm::FunctionDefinition WasmCodeTransform::translateFunction(yul::FunctionDefin
 	m_localVariables.clear();
 	m_functionBodyLabel = {};
 
+	// First return variable is returned directly, the others are stored in globals.
 	if (!_fun.returnVariables.empty())
 	{
-		// First return variable is returned directly, the others are stored
-		// in globals.
-		allocateGlobals(_fun.returnVariables.size() - 1);
+		vector<wasm::Type> requestedTypes;
+		for (size_t i = 1; i < _fun.returnVariables.size(); ++i)
+			requestedTypes.push_back(_fun.returnVariables[i].type.str());
+		vector<size_t> allocatedIndices = allocateGlobals(requestedTypes);
+		yulAssert(allocatedIndices.size() == _fun.returnVariables.size() - 1, "");
+
 		for (size_t i = 1; i < _fun.returnVariables.size(); ++i)
 			fun.body.emplace_back(wasm::GlobalAssignment{
-				m_globalVariables.at(i - 1).variableName,
+				m_globalVariables.at(allocatedIndices[i - 1]).variableName,
 				make_unique<wasm::Expression>(wasm::LocalVariable{_fun.returnVariables.at(i).name.str()})
 			});
 		fun.body.emplace_back(wasm::LocalVariable{_fun.returnVariables.front().name.str()});
@@ -344,13 +367,29 @@ string WasmCodeTransform::newLabel()
 	return m_nameDispenser.newName("label_"_yulstring).str();
 }
 
-void WasmCodeTransform::allocateGlobals(size_t _amount)
+vector<size_t> WasmCodeTransform::allocateGlobals(vector<wasm::Type> const& _requestedTypes)
 {
-	while (m_globalVariables.size() < _amount)
-		m_globalVariables.emplace_back(wasm::GlobalVariableDeclaration{
-			m_nameDispenser.newName("global_"_yulstring).str(),
-			"i64"
-		});
+	vector<size_t> allocatedIndices;
+
+	map<wasm::Type, size_t> firstUnused;
+	for (wasm::Type const& type: _requestedTypes)
+	{
+		firstUnused.try_emplace(type, 0);
+		while (firstUnused[type] < m_globalVariables.size() && m_globalVariables[firstUnused[type]].type != type)
+			++firstUnused[type];
+
+		if (firstUnused[type] == m_globalVariables.size())
+			m_globalVariables.emplace_back(wasm::GlobalVariableDeclaration{
+				m_nameDispenser.newName("global_"_yulstring).str(),
+				type,
+			});
+
+		allocatedIndices.push_back(firstUnused[type]);
+		++firstUnused[type];
+	}
+
+	yulAssert(allocatedIndices.size() == _requestedTypes.size(), "");
+	return allocatedIndices;
 }
 
 wasm::Literal WasmCodeTransform::makeLiteral(wasm::Type _type, u256 _value)
