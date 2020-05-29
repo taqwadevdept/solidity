@@ -745,7 +745,8 @@ General Information)").c_str(),
 	desc.add_options()
 		(g_argHelp.c_str(), "Show help message and exit.")
 		(g_argVersion.c_str(), "Show version and exit.")
-		(g_strLicense.c_str(), "Show licensing information and exit.");
+		(g_strLicense.c_str(), "Show licensing information and exit.")
+	;
 
 	po::options_description inputAndOutputOptions("Input and Output Options");
 	inputAndOutputOptions.add_options()
@@ -770,8 +771,15 @@ General Information)").c_str(),
 			po::value<string>()->value_name("path"),
 			"If given, creates one file per component and contract/file at the specified directory."
 		)
-		(g_argIgnoreMissingFiles.c_str(), "Ignore missing files.")
-		(g_strOverwrite.c_str(), "Overwrite existing files (used together with -o).");
+		(
+			g_argIgnoreMissingFiles.c_str(),
+			"Ignore missing files."
+		)
+		(
+			g_strOverwrite.c_str(),
+			"Overwrite existing files (used together with -o)."
+		)
+	;
 	desc.add(inputAndOutputOptions);
 
 	po::options_description alternativeInputModes("Alternative Input Modes");
@@ -809,7 +817,8 @@ General Information)").c_str(),
 			("Import ASTs to be compiled, assumes input holds the AST in compact JSON format. "
 			"Supported Inputs is the output of the --" + g_argStandardJSON + " or the one produced by "
 			"--" + g_argCombinedJson + " " + g_strAst + "," + g_strCompactJSON).c_str()
-		);
+		)
+	;
 	desc.add(alternativeInputModes);
 
 	po::options_description assemblyModeOptions("Assembly Mode Options");
@@ -823,7 +832,8 @@ General Information)").c_str(),
 			g_strYulDialect.c_str(),
 			po::value<string>()->value_name(boost::join(g_yulDialectArgs, ",")),
 			"Input dialect to use in assembly or yul mode."
-		);
+		)
+	;
 	desc.add(assemblyModeOptions);
 
 	po::options_description linkerModeOptions("Linker Mode Options");
@@ -834,14 +844,16 @@ General Information)").c_str(),
 			"Direct string or file containing library addresses. Syntax: "
 			"<libraryName>:<address> [, or whitespace] ...\n"
 			"Address is interpreted as a hex string optionally prefixed by 0x."
-		);
+		)
+	;
 	desc.add(linkerModeOptions);
 
 	po::options_description outputFormatting("Output Formatting");
 	outputFormatting.add_options()
 		(g_argPrettyJson.c_str(), "Output JSON in pretty format. Currently it only works with the combined JSON output.")
 		(g_argColor.c_str(), "Force colored output.")
-		(g_argNoColor.c_str(), "Explicitly disable colored output, disabling terminal auto-detection.");
+		(g_argNoColor.c_str(), "Explicitly disable colored output, disabling terminal auto-detection.")
+	;
 	desc.add(outputFormatting);
 
 	po::options_description outputComponents("Output Components");
@@ -861,17 +873,22 @@ General Information)").c_str(),
 		(g_argNatspecUser.c_str(), "Natspec user documentation of all contracts.")
 		(g_argNatspecDev.c_str(), "Natspec developer documentation of all contracts.")
 		(g_argMetadata.c_str(), "Combined Metadata JSON whose Swarm hash is stored on-chain.")
-		(g_argStorageLayout.c_str(), "Slots, offsets and types of the contract's state variables.");
+		(g_argStorageLayout.c_str(), "Slots, offsets and types of the contract's state variables.")
+	;
 	desc.add(outputComponents);
 
 	po::options_description extraOutput("Extra Output");
 	extraOutput.add_options()
-		(g_argGas.c_str(), "Print an estimate of the maximal gas usage for each function.")
+		(
+			g_argGas.c_str(),
+			"Print an estimate of the maximal gas usage for each function."
+		)
 		(
 			g_argCombinedJson.c_str(),
 			po::value<string>()->value_name(boost::join(g_combinedJsonArgs, ",")),
 			"Output a single json document containing the specified information."
-		);
+		)
+	;
 	desc.add(extraOutput);
 
 	po::options_description metadataOptions("Metadata Options");
@@ -881,25 +898,39 @@ General Information)").c_str(),
 			po::value<string>()->value_name(boost::join(g_metadataHashArgs, ",")),
 			"Choose hash method for the bytecode metadata or disable it."
 		)
-		(g_argMetadataLiteral.c_str(), "Store referenced sources as literal data in the metadata output.");
+		(
+			g_argMetadataLiteral.c_str(),
+			"Store referenced sources as literal data in the metadata output."
+		)
+	;
 	desc.add(metadataOptions);
 
 	po::options_description optimizerOptions("Optimizer Options");
 	optimizerOptions.add_options()
-		(g_argOptimize.c_str(), "Enable bytecode optimizer.")
+		(
+			g_argOptimize.c_str(),
+			"Enable bytecode optimizer."
+		)
 		(
 			g_argOptimizeRuns.c_str(),
 			po::value<unsigned>()->value_name("n")->default_value(200),
 			"Set for how many contract runs to optimize. "
 			"Lower values will optimize more for initial deployment cost, higher values will optimize more for high-frequency usage."
 		)
-		(g_strOptimizeYul.c_str(), ("Legacy option, ignored. Use the general --" + g_argOptimize + " to enable Yul optimizer.").c_str())
-		(g_strNoOptimizeYul.c_str(), "Disable Yul optimizer in Solidity.")
+		(
+			g_strOptimizeYul.c_str(),
+			("Legacy option, ignored. Use the general --" + g_argOptimize + " to enable Yul optimizer.").c_str()
+		)
+		(
+			g_strNoOptimizeYul.c_str(),
+			"Disable Yul optimizer in Solidity."
+		)
 		(
 			g_strYulOptimizations.c_str(),
 			po::value<string>()->value_name("steps"),
 			"Forces yul optimizer to use the specified sequence of optimization steps instead of the built-in one."
-		);
+		)
+	;
 	desc.add(optimizerOptions);
 
 	po::options_description diagnostics("Diagnostics");
@@ -909,8 +940,15 @@ General Information)").c_str(),
 			po::value<string>()->value_name(boost::join(g_revertStringsArgs, ",")),
 			"Strip revert (and require) reason strings or add additional debugging information."
 		)
-		(g_argOldReporter.c_str(), "Enables old diagnostics reporter.")
-		(g_argErrorRecovery.c_str(), "Enables additional parser error recovery.");
+		(
+			g_argOldReporter.c_str(),
+			"Enables old diagnostics reporter."
+		)
+		(
+			g_argErrorRecovery.c_str(),
+			"Enables additional parser error recovery."
+		)
+	;
 	desc.add(diagnostics);
 
 
