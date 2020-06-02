@@ -1467,7 +1467,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 		break;
 	case Type::Category::Struct:
 	{
-		StructType const& structType = dynamic_cast<StructType const&>(*_memberAccess.expression().annotation().type);
+		auto const& structType = dynamic_cast<StructType const&>(*_memberAccess.expression().annotation().type);
 
 		IRVariable expression(_memberAccess.expression());
 		switch (structType.location())
