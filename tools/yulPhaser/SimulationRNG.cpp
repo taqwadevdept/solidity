@@ -35,16 +35,16 @@ bool SimulationRNG::bernoulliTrial(double _successProbability)
 	return static_cast<bool>(distribution(s_generator));
 }
 
-uint32_t SimulationRNG::uniformInt(uint32_t _min, uint32_t _max)
+size_t SimulationRNG::uniformInt(size_t _min, size_t _max)
 {
-	boost::random::uniform_int_distribution<> distribution(_min, _max);
-	return distribution(s_generator);
+	boost::random::uniform_int_distribution<> distribution(static_cast<int>(_min), static_cast<int>(_max));
+	return static_cast<size_t>(distribution(s_generator));
 }
 
-uint32_t SimulationRNG::binomialInt(uint32_t _numTrials, double _successProbability)
+size_t SimulationRNG::binomialInt(size_t _numTrials, double _successProbability)
 {
-	boost::random::binomial_distribution<> distribution(_numTrials, _successProbability);
-	return distribution(s_generator);
+	boost::random::binomial_distribution<> distribution(static_cast<int>(_numTrials), _successProbability);
+	return static_cast<size_t>(distribution(s_generator));
 }
 
 uint32_t SimulationRNG::generateSeed()
