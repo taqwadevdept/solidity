@@ -58,11 +58,15 @@ SourceReference SourceReferenceExtractor::extract(SourceLocation const* _locatio
 
 	string line = source->lineAtPosition(_location->start);
 
-	int locationLength = isMultiline ? line.length() - start.column : end.column - start.column;
+	int locationLength =
+		isMultiline ?
+			int(line.length()) - start.column :
+			end.column - start.column;
+
 	if (locationLength > 150)
 	{
-		int const lhs = start.column + 35;
-		int const rhs = (isMultiline ? line.length() : end.column) - 35;
+		auto const lhs = static_cast<size_t>(start.column) + 35;
+		string::size_type const rhs = (isMultiline ? line.length() : static_cast<size_t>(end.column)) - 35;
 		line = line.substr(0, lhs) + " ... " + line.substr(rhs);
 		end.column = start.column + 75;
 		locationLength = 75;
@@ -70,16 +74,21 @@ SourceReference SourceReferenceExtractor::extract(SourceLocation const* _locatio
 
 	if (line.length() > 150)
 	{
-		int const len = line.length();
-		line = line.substr(max(0, start.column - 35), min(start.column, 35) + min(locationLength + 35, len - start.column));
-		if (start.column + locationLength + 35 < len)
+		line = line.substr(
+			max(0ul, static_cast<size_t>(start.column) - 35ul),
+			min(static_cast<size_t>(start.column), 35ul) + min(
+					static_cast<size_t>(locationLength) + 35ul,
+					static_cast<size_t>(static_cast<int>(line.length()) - start.column)
+			)
+		);
+		if (start.column + locationLength + 35 < static_cast<int>(line.length()))
 			line += " ...";
 		if (start.column > 35)
 		{
 			line = " ... " + line;
 			start.column = 40;
 		}
-		end.column = start.column + locationLength;
+		end.column = start.column + static_cast<int>(locationLength);
 	}
 
 	return SourceReference{
