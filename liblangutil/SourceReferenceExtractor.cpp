@@ -75,7 +75,7 @@ SourceReference SourceReferenceExtractor::extract(SourceLocation const* _locatio
 	if (line.length() > 150)
 	{
 		line = line.substr(
-			max(0ul, static_cast<size_t>(start.column) - 35ul),
+			static_cast<size_t>(max(0, start.column - 35)),
 			min(static_cast<size_t>(start.column), 35ul) + min(
 					static_cast<size_t>(locationLength) + 35ul,
 					static_cast<size_t>(static_cast<int>(line.length()) - start.column)
